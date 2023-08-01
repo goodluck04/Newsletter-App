@@ -1,9 +1,11 @@
+require('dotenv').config()
 const express = require("express");
 const request = require("request");
 const bodyParser = require("body-parser");
 const https = require("https");
 
 const app = express();
+
 
 // to use static file like css,images,etc we have use .static() method
 app.use(express.static("public"));
@@ -38,12 +40,14 @@ app.post("/", function(req, res){
     // make compact JSON
     const jsonData = JSON.stringify(data)
 
+    
+
     const url = "https://us17.api.mailchimp.com/3.0/lists/b887c23e6d";
 
-
+    const apikey = process.env.API_KEY
     const options = {
         method: "POST",
-        auth: "goodluck:(put api key her)"
+        auth: "goodluck:" + apikey
     }
 
     const request = https.request(url,options, function(response){
