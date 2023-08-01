@@ -1,80 +1,53 @@
-require('dotenv').config()
+require('dotenv').config();
 const express = require("express");
-const request = require("request");
-const bodyParser = require("body-parser");
 const https = require("https");
+const bodyParser = require("body-parser");
 
 const app = express();
 
-
-// to use static file like css,images,etc we have use .static() method
-app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended: true}));
 
-// app.use(bodyParser);
-
 app.get("/", function(req, res){
-    res.sendFile(__dirname + "/singnup.html")
-    // console.console.log("singnup");
+
+    res.sendFile(__dirname + "/index.html");
+
 });
+
 
 app.post("/", function(req, res){
     
-    const firstName = req.body.fName;
-    const lastName = req.body.lName;
-    const email = req.body.email;
+    const query = req.body.cityName;
+    const apiKey = process.env.API_KEY;
+    const unit = "metric";
+    const url = "https://api.openweathermap.org/data/2.5/weather?q=" + query + "&appid=" + apiKey + "&units=" + unit; 
 
-    // console.log(firstName, lastName, email);
+    https.get(url, function(response){
+        console.log(response.statusCode);  // it will display status code
     
-
-    const data = {
-        members:[ {
-          email_address: email,
-          status: "subscribed",
-          merge_fields: {
-            FNAME: firstName,
-            LNAME: lastName
-          }
-        }]
-    }
-    // make compact JSON
-    const jsonData = JSON.stringify(data)
-
-    
-
-    const url = "https://us17.api.mailchimp.com/3.0/lists/b887c23e6d";
-
-    const apikey = process.env.API_KEY
-    const options = {
-        method: "POST",
-        auth: "goodluck:" + apikey
-    }
-
-    const request = https.request(url,options, function(response){
-        
-        if(response.statusCode === 200) {
-            res.sendFile(__dirname + "/success.html");
-        } else {
-            res.sendFile(__dirname + "/failure.html")
-        }
-       
+      // tap into responses data using .on() methond
         response.on("data", function(data){
-            console.log(JSON.parse(data))
-        })
+        // console.log(data); it will give hexadecimal data
+
+        // convert into string 
+            const weatherData = JSON.parse(data) // JSON.stringify(object) do the oppostie 
+            // console.log(weatherData);
+            const temp = weatherData.main.temp
+            const weatherDesciption = weatherData.weather[0].description
+            const icon = weatherData.weather[0].icon
+            const imageURL = "https://openweathermap.org/img/wn/" +icon+ "@2x.png"
+            // console.log(temp);
+            // console.log(weatherDesciption)
+            res.write("<p>The Weather is currently " + weatherDesciption + "</p>")
+            res.write("<h1>The temperature in " + query + " is " + temp + "degrees Celcius.</h1>")
+            res.write("<img src=" + imageURL + ">");
+            res.send();
+
+      })
 
     })
-  
-    request.write(jsonData);
-    request.end();
 
 });
 
-// failure redired
-app.post("/failure", function(req, res){
-    res.redirect("/");
+app.listen(3000, function(){
+    console.log("Server is running on port 3000.")
 });
-
-app.listen(process.env.PORT ||3000, function(){
-    console.log("The server is running on port 3000.");
-});
-
